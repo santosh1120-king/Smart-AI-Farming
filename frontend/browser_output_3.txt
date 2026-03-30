@@ -1,0 +1,6 @@
+BROWSER CONSOLE: debug [vite] connecting...
+BROWSER CONSOLE: info %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+BROWSER ERROR: Objects are not valid as a React child (found: object with keys {$$typeof, type, key, props, _owner, _store}). If you meant to render a collection of children, use an array instead.
+BROWSER ERROR: Objects are not valid as a React child (found: object with keys {$$typeof, type, key, props, _owner, _store}). If you meant to render a collection of children, use an array instead.
+BROWSER CONSOLE: debug [vite] connected.
+HTML ROOT: 

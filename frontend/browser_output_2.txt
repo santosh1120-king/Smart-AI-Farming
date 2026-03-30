@@ -1,0 +1,7 @@
+BROWSER NETWORK ERROR: http://localhost:5173/ net::ERR_CONNECTION_REFUSED
+PAGE GOTO ERROR: Error: net::ERR_CONNECTION_REFUSED at http://localhost:5173
+    at navigate (file:///C:/Users/ASUS/OneDrive/Desktop/AI%20assisted%20farming%20ojt/frontend/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Frame.js:180:27)
+    at async Deferred.race (file:///C:/Users/ASUS/OneDrive/Desktop/AI%20assisted%20farming%20ojt/frontend/node_modules/puppeteer-core/lib/esm/puppeteer/util/Deferred.js:33:20)
+    at async CdpFrame.goto (file:///C:/Users/ASUS/OneDrive/Desktop/AI%20assisted%20farming%20ojt/frontend/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Frame.js:146:25)
+    at async CdpPage.goto (file:///C:/Users/ASUS/OneDrive/Desktop/AI%20assisted%20farming%20ojt/frontend/node_modules/puppeteer-core/lib/esm/puppeteer/api/Page.js:576:20)
+    at async file:///C:/Users/ASUS/OneDrive/Desktop/AI%20assisted%20farming%20ojt/frontend/check_browser.js:13:5
