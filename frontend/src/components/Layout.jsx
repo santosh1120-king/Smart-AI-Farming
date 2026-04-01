@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { LayoutDashboard, Leaf, CloudSun, BookOpen, Mic, History, LogOut, Bell } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import api from '../services/api'
+import { requestNotificationPermission } from '../services/firebase'
 
 const NAV_ITEMS = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -31,6 +32,23 @@ export default function Layout() {
     const interval = setInterval(fetchUnread, 60000)
     return () => clearInterval(interval)
   }, [])
+
+  useEffect(() => {
+    const syncFcmToken = async () => {
+      if (!user) return
+
+      try {
+        const fcmToken = await requestNotificationPermission()
+        if (!fcmToken) return
+
+        await api.put('/api/auth/fcm-token', { fcm_token: fcmToken })
+      } catch (error) {
+        console.warn('FCM token sync skipped:', error?.message || error)
+      }
+    }
+
+    syncFcmToken()
+  }, [user])
 
   const handleLogout = () => {
     logout()

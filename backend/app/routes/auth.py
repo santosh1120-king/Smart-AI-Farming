@@ -1,10 +1,10 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from bson import ObjectId
 from datetime import datetime
 
 from ..database import get_collection
 from ..models.user import UserCreate, UserLogin, UserResponse, TokenResponse
-from ..utils.auth import hash_password, verify_password, create_access_token
+from ..utils.auth import hash_password, verify_password, create_access_token, get_current_user
 
 router = APIRouter()
 
@@ -58,10 +58,11 @@ async def login(data: UserLogin):
 
 
 @router.put("/fcm-token")
-async def update_fcm_token(token_data: dict, current_user: dict = None):
+async def update_fcm_token(
+    token_data: dict,
+    current_user: dict = Depends(get_current_user),
+):
     """Update the FCM token for push notifications."""
-    from ..utils.auth import get_current_user
-    from fastapi import Depends
     users = get_collection("users")
     await users.update_one(
         {"_id": ObjectId(current_user["id"])},

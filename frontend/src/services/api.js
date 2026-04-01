@@ -1,7 +1,16 @@
 import axios from 'axios'
 
+function normalizeApiBaseUrl(value) {
+  if (!value) return ''
+
+  const trimmed = value.trim().replace(/\/+$/, '')
+
+  // Support either `https://host` or `https://host/api` in env config
+  return trimmed.replace(/\/api$/, '')
+}
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
+  baseURL: normalizeApiBaseUrl(import.meta.env.VITE_API_URL),
   timeout: 30000,
 })
 
