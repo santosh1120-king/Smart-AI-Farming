@@ -10,7 +10,6 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 10080
 
-    openai_api_key: str = ""
     gemini_api_key: str = ""
     openweather_api_key: str = ""
 

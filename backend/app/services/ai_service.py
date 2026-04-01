@@ -4,6 +4,7 @@ from openai import AsyncOpenAI
 from ..config import get_settings
 
 settings = get_settings()
+# Gemini is accessed through Google's OpenAI-compatible endpoint.
 client = AsyncOpenAI(
     api_key=settings.gemini_api_key,
     base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
@@ -29,7 +30,7 @@ Health status rules:
 
 
 async def analyze_crop_image(image_data: bytes, filename: str) -> dict:
-    """Analyze crop image using OpenAI Vision API."""
+    """Analyze a crop image using Gemini via the OpenAI-compatible API."""
     # Encode image to base64
     b64_image = base64.b64encode(image_data).decode("utf-8")
     
@@ -71,7 +72,7 @@ async def analyze_crop_image(image_data: bytes, filename: str) -> dict:
 
 
 async def answer_farming_question(query: str, context: str = None) -> str:
-    """Answer farming-related questions using OpenAI Chat."""
+    """Answer farming-related questions using Gemini."""
     system = """You are a knowledgeable and friendly agricultural advisor for Indian farmers.
     Provide practical, simple, actionable advice. Keep answers concise (2-4 sentences).
     Use simple language that farmers can understand. Focus on local Indian farming practices.
