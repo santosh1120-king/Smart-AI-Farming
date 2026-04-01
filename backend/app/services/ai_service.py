@@ -4,7 +4,10 @@ from openai import AsyncOpenAI
 from ..config import get_settings
 
 settings = get_settings()
-client = AsyncOpenAI(api_key=settings.openai_api_key)
+client = AsyncOpenAI(
+    api_key=settings.gemini_api_key,
+    base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+)
 
 SYSTEM_PROMPT = """You are an expert agricultural AI assistant. Analyze crop images and provide detailed assessments.
 When analyzing a crop image, you must respond ONLY with a valid JSON object (no markdown, no explanation) with this exact structure:
@@ -36,7 +39,7 @@ async def analyze_crop_image(image_data: bytes, filename: str) -> dict:
     media_type = media_types.get(ext, "image/jpeg")
 
     response = await client.chat.completions.create(
-        model="gpt-4o",
+        model="gemini-2.0-flash",
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {
@@ -80,7 +83,7 @@ async def answer_farming_question(query: str, context: str = None) -> str:
     messages.append({"role": "user", "content": query})
     
     response = await client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gemini-2.0-flash",
         messages=messages,
         max_tokens=300,
         temperature=0.7,
