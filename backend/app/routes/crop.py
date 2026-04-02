@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 
 from ..database import delete_rows, insert_row, select_one, select_rows, utcnow_iso
 from ..services import ai_service, cloudinary_service
@@ -15,7 +15,9 @@ MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 
 @router.post("/analyze")
 async def analyze_crop(
+    request: Request,
     file: UploadFile = File(...),
+    notes: str | None = Form(default=None),
     current_user: dict = Depends(get_current_user),
 ):
     """Upload a crop image and get AI-powered analysis."""
@@ -33,7 +35,13 @@ async def analyze_crop(
         raise HTTPException(status_code=500, detail=f"Image upload failed: {exc}") from exc
 
     try:
-        analysis_dict = await ai_service.analyze_crop_image(image_data, file.filename)
+        ai_result = await ai_service.analyze_crop_image(
+            image_data=image_data,
+            filename=file.filename,
+            provider_keys=ai_service.build_provider_keys(request.headers),
+            notes=notes,
+        )
+        analysis_dict = ai_result["analysis"]
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"AI analysis failed: {exc}") from exc
 
@@ -70,6 +78,8 @@ async def analyze_crop(
         "id": created_analysis["id"],
         "image_url": cloud_result["url"],
         "analysis": analysis_dict,
+        "provider": ai_result["provider"],
+        "model": ai_result["model"],
         "created_at": analysis_doc["created_at"],
     }
 

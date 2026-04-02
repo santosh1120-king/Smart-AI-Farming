@@ -264,6 +264,38 @@ img { max-width: 100%; display: block; }
   gap: 8px;
 }
 .logout-btn:hover { background: rgba(239,68,68,0.2); }
+.ai-settings-btn {
+  width: 100%;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  background: rgba(255,255,255,0.06);
+  color: var(--color-text);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ai-settings-btn:hover {
+  background: rgba(255,255,255,0.1);
+}
+.ai-settings-status {
+  margin-left: auto;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.ai-settings-status.ready {
+  background: rgba(34,197,94,0.18);
+  color: var(--green-400);
+}
+.ai-settings-status.missing {
+  background: rgba(234,179,8,0.18);
+  color: var(--yellow-400);
+}
 
 /* ====================================
    CARDS
@@ -388,6 +420,91 @@ img { max-width: 100%; display: block; }
 }
 .form-input::placeholder { color: var(--slate-500); }
 select.form-input option { background: var(--slate-800); }
+textarea.form-input {
+  resize: vertical;
+  min-height: 110px;
+}
+.settings-help {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+.settings-callout {
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(34,197,94,0.22);
+  background: rgba(34,197,94,0.08);
+  color: #d8f6e3;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.page-callout {
+  margin-bottom: 20px;
+}
+.analysis-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 10, 20, 0.7);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1200;
+}
+.settings-modal {
+  width: min(100%, 560px);
+  background: linear-gradient(180deg, rgba(15,32,68,0.98), rgba(7,20,40,0.98));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.settings-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+.settings-modal-header h2 {
+  font-size: 22px;
+  font-weight: 800;
+}
+.settings-modal-header p {
+  margin-top: 4px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+.settings-modal-body {
+  padding: 20px 24px;
+  display: grid;
+  gap: 8px;
+}
+.settings-modal-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 24px 24px;
+}
+.icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  color: var(--color-text);
+}
+.icon-btn:hover {
+  background: rgba(255,255,255,0.1);
+}
 
 /* ====================================
    BADGE / STATUS

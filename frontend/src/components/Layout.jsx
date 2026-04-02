@@ -1,9 +1,11 @@
-import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
+import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { LayoutDashboard, Leaf, CloudSun, BookOpen, Mic, History, LogOut, Bell } from 'lucide-react'
+import { LayoutDashboard, Leaf, CloudSun, BookOpen, Mic, History, LogOut, Bell, KeyRound } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import api from '../services/api'
 import { requestNotificationPermission } from '../services/firebase'
+import APIKeySettingsModal from './APIKeySettingsModal'
+import { hasAnyAIKey, loadAIKeys } from '../services/aiKeys'
 
 const NAV_ITEMS = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -17,9 +19,14 @@ const NAV_ITEMS = [
 export default function Layout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const location = useLocation()
   const [unreadCount, setUnreadCount] = useState(0)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [aiSettingsOpen, setAiSettingsOpen] = useState(false)
+  const [hasKeys, setHasKeys] = useState(false)
+
+  useEffect(() => {
+    setHasKeys(hasAnyAIKey(loadAIKeys()))
+  }, [])
 
   useEffect(() => {
     const fetchUnread = async () => {
@@ -105,6 +112,13 @@ export default function Layout() {
         </div>
 
         <div className="sidebar-footer">
+          <button className="ai-settings-btn" onClick={() => setAiSettingsOpen(true)}>
+            <KeyRound size={16} />
+            <span>AI Keys</span>
+            <span className={`ai-settings-status ${hasKeys ? 'ready' : 'missing'}`}>
+              {hasKeys ? 'Saved' : 'Needed'}
+            </span>
+          </button>
           <div className="sidebar-user">
             <div className="sidebar-user-avatar">{avatarLetter}</div>
             <div className="sidebar-user-info">
@@ -159,6 +173,12 @@ export default function Layout() {
           </NavLink>
         ))}
       </nav>
+
+      <APIKeySettingsModal
+        open={aiSettingsOpen}
+        onClose={() => setAiSettingsOpen(false)}
+        onSaved={(keys) => setHasKeys(hasAnyAIKey(keys))}
+      />
     </div>
   )
 }

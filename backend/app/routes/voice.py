@@ -1,8 +1,10 @@
 from fastapi import APIRouter, HTTPException, Depends
+from fastapi import Request
 
 from ..database import insert_row, select_rows, utcnow_iso
 from ..utils.auth import get_current_user
 from ..services.ai_service import answer_farming_question
+from ..services import ai_service
 from ..models.misc import VoiceQueryRequest
 import uuid
 
@@ -11,6 +13,7 @@ router = APIRouter()
 
 @router.post("/query")
 async def voice_query(
+    request: Request,
     data: VoiceQueryRequest,
     current_user: dict = Depends(get_current_user),
 ):
@@ -19,7 +22,12 @@ async def voice_query(
         raise HTTPException(status_code=400, detail="Query cannot be empty")
     
     try:
-        response = await answer_farming_question(data.query, data.context)
+        ai_result = await answer_farming_question(
+            query=data.query,
+            context=data.context,
+            provider_keys=ai_service.build_provider_keys(request.headers),
+        )
+        response = ai_result["response"]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI service error: {str(e)}")
     
@@ -37,6 +45,8 @@ async def voice_query(
         "id": created_log["id"],
         "query": data.query,
         "response": response,
+        "provider": ai_result["provider"],
+        "model": ai_result["model"],
         "created_at": log_doc["created_at"],
     }
 
