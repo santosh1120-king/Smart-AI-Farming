@@ -444,6 +444,34 @@ select.form-input option { background: var(--slate-800); }
 
 .auth-form .form-input { font-size: 16px; padding: 15px 18px; } /* Larger for mobile */
 .auth-form .btn-primary { width: 100%; padding: 16px; font-size: 16px; }
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+.auth-google-btn {
+  width: 100%;
+  margin-top: 16px;
+  padding: 16px;
+  font-size: 16px;
+  border-color: rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.03);
+}
+.auth-google-btn:hover:not(:disabled) {
+  border-color: rgba(255,255,255,0.28);
+  color: var(--color-text);
+  background: rgba(255,255,255,0.06);
+}
 .auth-switch {
   text-align: center;
   margin-top: 20px;

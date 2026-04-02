@@ -1,14 +1,49 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
 import toast from 'react-hot-toast'
+import {
+  clearSupabaseAuthResult,
+  hasSupabaseGoogleConfig,
+  readSupabaseAuthResult,
+  startGoogleSignIn,
+} from '../services/supabaseAuth'
 
 export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' })
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    const { accessToken, error } = readSupabaseAuthResult()
+    if (!accessToken && !error) return
+
+    clearSupabaseAuthResult()
+
+    if (error) {
+      toast.error(error)
+      return
+    }
+
+    const finishGoogleLogin = async () => {
+      setGoogleLoading(true)
+      try {
+        const { data } = await api.post('/api/auth/google', { access_token: accessToken })
+        login(data.user, data.access_token)
+        toast.success(`Welcome, ${data.user.name}!`)
+        navigate('/dashboard', { replace: true })
+      } catch (err) {
+        toast.error(err.response?.data?.detail || 'Google sign-in failed. Please try again.')
+      } finally {
+        setGoogleLoading(false)
+      }
+    }
+
+    finishGoogleLogin()
+  }, [login, navigate])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -16,12 +51,22 @@ export default function LoginPage() {
     try {
       const { data } = await api.post('/api/auth/login', form)
       login(data.user, data.access_token)
-      toast.success(`Welcome back, ${data.user.name}! 🌱`)
+      toast.success(`Welcome back, ${data.user.name}!`)
       navigate('/dashboard')
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Login failed. Check your credentials.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleGoogleLogin = () => {
+    try {
+      setGoogleLoading(true)
+      startGoogleSignIn()
+    } catch (err) {
+      setGoogleLoading(false)
+      toast.error(err.message || 'Supabase Google auth is not configured.')
     }
   }
 
@@ -36,7 +81,7 @@ export default function LoginPage() {
 
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">📧 Email Address</label>
+            <label className="form-label">Email Address</label>
             <input
               type="email"
               className="form-input"
@@ -47,7 +92,7 @@ export default function LoginPage() {
             />
           </div>
           <div className="form-group">
-            <label className="form-label">🔒 Password</label>
+            <label className="form-label">Password</label>
             <input
               type="password"
               className="form-input"
@@ -57,14 +102,32 @@ export default function LoginPage() {
               required
             />
           </div>
-          <button type="submit" className="btn btn-primary btn-lg" disabled={loading}>
+          <button type="submit" className="btn btn-primary btn-lg" disabled={loading || googleLoading}>
             {loading ? (
               <><div className="loading-spinner sm"></div> Signing In...</>
             ) : (
-              '🌱 Sign In'
+              'Sign In'
             )}
           </button>
         </form>
+
+        {hasSupabaseGoogleConfig() && (
+          <>
+            <div className="auth-divider"><span>or</span></div>
+            <button
+              type="button"
+              className="btn btn-outline btn-lg auth-google-btn"
+              onClick={handleGoogleLogin}
+              disabled={loading || googleLoading}
+            >
+              {googleLoading ? (
+                <><div className="loading-spinner sm"></div> Connecting Google...</>
+              ) : (
+                'Continue with Google'
+              )}
+            </button>
+          </>
+        )}
 
         <div className="auth-switch">
           Don't have an account?

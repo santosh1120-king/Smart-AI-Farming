@@ -1,10 +1,11 @@
-from fastapi import APIRouter, HTTPException, Depends, Query
-from datetime import datetime
+import uuid
 
-from ..database import get_collection
-from ..utils.auth import get_current_user
-from ..services.weather_service import fetch_weather
+from fastapi import APIRouter, Depends, HTTPException, Query
+
+from ..database import insert_row, utcnow_iso
 from ..services.notification_service import send_push_notification
+from ..services.weather_service import fetch_weather
+from ..utils.auth import get_current_user
 
 router = APIRouter()
 
@@ -18,38 +19,43 @@ async def get_weather(
     """Fetch real-time weather data and detect risks."""
     try:
         weather = fetch_weather(lat, lon)
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Weather service error: {str(e)}")
-    
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Weather service error: {exc}") from exc
+
     weather_dict = weather.model_dump()
-    
-    # Save to DB
-    weather_col = get_collection("weather_data")
-    await weather_col.insert_one({
-        "user_id": current_user["id"],
-        "lat": lat,
-        "lon": lon,
-        "data": weather_dict,
-        "timestamp": datetime.utcnow(),
-    })
-    
-    # Send push notification if high risk
+
+    await insert_row(
+        "weather_data",
+        {
+            "id": uuid.uuid4().hex,
+            "user_id": current_user["id"],
+            "lat": lat,
+            "lon": lon,
+            "data": weather_dict,
+            "timestamp": utcnow_iso(),
+        },
+    )
+
     risk = weather.risk
     if risk.level in ["high", "medium"] and current_user.get("fcm_token"):
+        title = f"Weather Alert: {risk.type.title() if risk.type else 'Risk'}"
         send_push_notification(
             current_user["fcm_token"],
-            f"🌦️ Weather Alert: {risk.type.title() if risk.type else 'Risk'}",
+            title,
             risk.message or "Check weather conditions",
             {"type": "weather_risk"},
         )
-        notifs = get_collection("notifications")
-        await notifs.insert_one({
-            "user_id": current_user["id"],
-            "title": f"Weather Alert: {risk.type.title() if risk.type else 'Risk'}",
-            "body": risk.message,
-            "type": "weather_risk",
-            "read": False,
-            "sent_at": datetime.utcnow(),
-        })
-    
+        await insert_row(
+            "notifications",
+            {
+                "id": uuid.uuid4().hex,
+                "user_id": current_user["id"],
+                "title": title,
+                "body": risk.message,
+                "type": "weather_risk",
+                "read": False,
+                "sent_at": utcnow_iso(),
+            },
+        )
+
     return weather_dict

@@ -1,10 +1,18 @@
 from fastapi import APIRouter, Depends, Query
 from typing import Optional
 
-from ..database import get_collection
+from ..database import select_one, select_rows
 from ..utils.auth import get_current_user
 
 router = APIRouter()
+
+
+def _matches_filter(value: Optional[str], search: Optional[str]) -> bool:
+    if not search:
+        return True
+    if not value:
+        return False
+    return search.lower() in value.lower()
 
 
 @router.get("")
@@ -14,25 +22,13 @@ async def get_schemes(
     current_user: dict = Depends(get_current_user),
 ):
     """Get government schemes filtered by state and crop."""
-    schemes_col = get_collection("government_schemes")
-    
-    query = {}
-    if state:
-        query["$or"] = [
-            {"state": {"$regex": state, "$options": "i"}},
-            {"state": "All"},
-        ]
-    if crop:
-        query["$or"] = query.get("$or", []) + [
-            {"crop_type": {"$regex": crop, "$options": "i"}},
-            {"crop_type": "All"},
-        ]
-    
-    cursor = schemes_col.find(query).sort("name", 1)
+    docs = await select_rows("government_schemes", order_by="name")
     schemes = []
-    async for doc in cursor:
-        doc["id"] = str(doc.pop("_id"))
-        schemes.append(doc)
+    for doc in docs:
+        state_match = doc.get("state") == "All" or _matches_filter(doc.get("state"), state)
+        crop_match = doc.get("crop_type") == "All" or _matches_filter(doc.get("crop_type"), crop)
+        if state_match and crop_match:
+            schemes.append(doc)
     
     return {"schemes": schemes, "count": len(schemes)}
 
@@ -40,11 +36,8 @@ async def get_schemes(
 @router.get("/{scheme_id}")
 async def get_scheme(scheme_id: str, current_user: dict = Depends(get_current_user)):
     """Get a single scheme by ID."""
-    from bson import ObjectId
-    schemes_col = get_collection("government_schemes")
-    doc = await schemes_col.find_one({"_id": ObjectId(scheme_id)})
+    doc = await select_one("government_schemes", filters=[("id", "eq", scheme_id)])
     if not doc:
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Scheme not found")
-    doc["id"] = str(doc.pop("_id"))
     return doc

@@ -1,10 +1,11 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from .database import connect_db, close_db
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
 from .config import get_settings
-from .routes import auth, crop, weather, schemes, voice, notifications
+from .database import close_db, connect_db
+from .routes import auth, crop, notifications, schemes, voice, weather
 
 settings = get_settings()
 
@@ -23,7 +24,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -38,7 +38,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Routers
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(crop.router, prefix="/api/crop", tags=["Crop Analysis"])
 app.include_router(weather.router, prefix="/api/weather", tags=["Weather"])
@@ -49,7 +48,7 @@ app.include_router(notifications.router, prefix="/api/notifications", tags=["Not
 
 @app.get("/", tags=["Health"])
 async def root():
-    return {"message": "AI Smart Farming Assistant API is running 🌱", "docs": "/docs"}
+    return {"message": "AI Smart Farming Assistant API is running", "docs": "/docs"}
 
 
 @app.get("/health", tags=["Health"])

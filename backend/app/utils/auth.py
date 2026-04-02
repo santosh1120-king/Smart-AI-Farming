@@ -7,7 +7,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from ..config import get_settings
-from ..database import get_collection
+from ..database import select_one
 
 settings = get_settings()
 security = HTTPBearer()
@@ -51,10 +51,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     if not user_id:
         raise HTTPException(status_code=401, detail="Invalid token payload")
 
-    users = get_collection("users")
-    from bson import ObjectId
-    user = await users.find_one({"_id": ObjectId(user_id)})
+    user = await select_one("users", filters=[("id", "eq", user_id)])
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    user["id"] = str(user["_id"])
     return user

@@ -3,18 +3,20 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
 import toast from 'react-hot-toast'
+import { hasSupabaseGoogleConfig, startGoogleSignIn } from '../services/supabaseAuth'
 
 const INDIAN_STATES = [
-  'Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chhattisgarh','Goa','Gujarat',
-  'Haryana','Himachal Pradesh','Jharkhand','Karnataka','Kerala','Madhya Pradesh',
-  'Maharashtra','Manipur','Meghalaya','Mizoram','Nagaland','Odisha','Punjab',
-  'Rajasthan','Sikkim','Tamil Nadu','Telangana','Tripura','Uttar Pradesh',
-  'Uttarakhand','West Bengal'
+  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat',
+  'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh',
+  'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab',
+  'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh',
+  'Uttarakhand', 'West Bengal',
 ]
 
 export default function RegisterPage() {
   const [form, setForm] = useState({ name: '', email: '', password: '', state: '', phone: '' })
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
 
@@ -24,16 +26,27 @@ export default function RegisterPage() {
       toast.error('Password must be at least 6 characters')
       return
     }
+
     setLoading(true)
     try {
       const { data } = await api.post('/api/auth/register', form)
       login(data.user, data.access_token)
-      toast.success(`Welcome, ${data.user.name}! Your account is ready 🌱`)
+      toast.success(`Welcome, ${data.user.name}! Your account is ready.`)
       navigate('/dashboard')
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Registration failed. Please try again.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleGoogleSignup = () => {
+    try {
+      setGoogleLoading(true)
+      startGoogleSignIn()
+    } catch (err) {
+      setGoogleLoading(false)
+      toast.error(err.message || 'Supabase Google auth is not configured.')
     }
   }
 
@@ -48,7 +61,7 @@ export default function RegisterPage() {
 
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">👤 Full Name</label>
+            <label className="form-label">Full Name</label>
             <input
               type="text"
               className="form-input"
@@ -59,7 +72,7 @@ export default function RegisterPage() {
             />
           </div>
           <div className="form-group">
-            <label className="form-label">📧 Email</label>
+            <label className="form-label">Email</label>
             <input
               type="email"
               className="form-input"
@@ -70,7 +83,7 @@ export default function RegisterPage() {
             />
           </div>
           <div className="form-group">
-            <label className="form-label">📱 Phone (Optional)</label>
+            <label className="form-label">Phone (Optional)</label>
             <input
               type="tel"
               className="form-input"
@@ -80,18 +93,18 @@ export default function RegisterPage() {
             />
           </div>
           <div className="form-group">
-            <label className="form-label">📍 Your State</label>
+            <label className="form-label">Your State</label>
             <select
               className="form-input"
               value={form.state}
               onChange={(e) => setForm({ ...form, state: e.target.value })}
             >
               <option value="">Select State</option>
-              {INDIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+              {INDIAN_STATES.map((state) => <option key={state} value={state}>{state}</option>)}
             </select>
           </div>
           <div className="form-group">
-            <label className="form-label">🔒 Password</label>
+            <label className="form-label">Password</label>
             <input
               type="password"
               className="form-input"
@@ -101,14 +114,32 @@ export default function RegisterPage() {
               required
             />
           </div>
-          <button type="submit" className="btn btn-primary btn-lg" disabled={loading}>
+          <button type="submit" className="btn btn-primary btn-lg" disabled={loading || googleLoading}>
             {loading ? (
               <><div className="loading-spinner sm"></div> Creating Account...</>
             ) : (
-              '🚀 Create Account'
+              'Create Account'
             )}
           </button>
         </form>
+
+        {hasSupabaseGoogleConfig() && (
+          <>
+            <div className="auth-divider"><span>or</span></div>
+            <button
+              type="button"
+              className="btn btn-outline btn-lg auth-google-btn"
+              onClick={handleGoogleSignup}
+              disabled={loading || googleLoading}
+            >
+              {googleLoading ? (
+                <><div className="loading-spinner sm"></div> Connecting Google...</>
+              ) : (
+                'Sign up with Google'
+              )}
+            </button>
+          </>
+        )}
 
         <div className="auth-switch">
           Already have an account?

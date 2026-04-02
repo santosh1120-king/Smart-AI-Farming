@@ -1,6 +1,6 @@
 # AI Smart Farming Assistant
 
-A full-stack farming assistant built with React, FastAPI, MongoDB, and Gemini.
+A full-stack farming assistant built with React, FastAPI, Supabase, and Gemini.
 
 ## Features
 
@@ -16,7 +16,7 @@ A full-stack farming assistant built with React, FastAPI, MongoDB, and Gemini.
 
 - Frontend: React + Vite
 - Backend: FastAPI
-- Database: MongoDB Atlas
+- Database: Supabase
 - AI: Gemini via Google's OpenAI-compatible API endpoint
 - Hosting: Vercel (frontend) and Render (backend)
 
@@ -53,8 +53,8 @@ Frontend runs at `http://localhost:5173`.
 
 Required in `backend/.env`:
 
-- `MONGODB_URL`
-- `DATABASE_NAME`
+- `SUPABASE_URL`
+- `SUPABASE_KEY`
 - `SECRET_KEY`
 - `GEMINI_API_KEY`
 - `OPENWEATHER_API_KEY`
@@ -66,6 +66,8 @@ Optional:
 
 - `FIREBASE_CREDENTIALS_PATH`
 - `FRONTEND_URL`
+
+Before running the backend, create the Supabase tables with `backend/supabase_schema.sql` and then seed schemes with `python seed_schemes.py`.
 
 ### Frontend
 

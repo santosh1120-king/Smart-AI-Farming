@@ -1,13 +1,40 @@
-import asyncio
-import motor.motor_asyncio
+import os
 
-async def test():
+from dotenv import load_dotenv
+import requests
+
+load_dotenv()
+
+
+def test_supabase_connection():
+    supabase_url = os.getenv("SUPABASE_URL", "")
+    supabase_key = (
+        os.getenv("SUPABASE_KEY")
+        or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+        or os.getenv("SUPABASE_ANON_KEY")
+        or ""
+    )
+
+    if not supabase_url or not supabase_key:
+        print("SUPABASE_URL or SUPABASE_KEY is missing")
+        return
+
     try:
-        print("Testing connection...")
-        client = motor.motor_asyncio.AsyncIOMotorClient('mongodb+srv://bittu20077002_db_user:NCMUpGh6UYW3Aami@cluster0.67pj2i5.mongodb.net/?appName=Cluster0', serverSelectionTimeoutMS=5000)
-        await client.server_info()
-        print("SUCCESS")
-    except Exception as e:
-        print(f"FAILED: {type(e).__name__} - {str(e)}")
+        response = requests.get(
+            f"{supabase_url.rstrip('/')}/rest/v1/government_schemes",
+            headers={
+                "apikey": supabase_key,
+                "Authorization": f"Bearer {supabase_key}",
+            },
+            params={"select": "id", "limit": "1"},
+            timeout=30,
+        )
+        response.raise_for_status()
+        print("Supabase connected successfully")
+        print(response.json())
+    except Exception as exc:
+        print(f"Supabase connection failed: {exc}")
 
-asyncio.run(test())
+
+if __name__ == "__main__":
+    test_supabase_connection()

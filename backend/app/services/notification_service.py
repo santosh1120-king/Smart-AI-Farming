@@ -1,7 +1,8 @@
 import os
-import json
+
 import firebase_admin
 from firebase_admin import credentials, messaging
+
 from ..config import get_settings
 
 settings = get_settings()
@@ -12,13 +13,14 @@ def _init_firebase():
     global _initialized
     if _initialized:
         return
+
     creds_path = settings.firebase_credentials_path
     if os.path.exists(creds_path):
         cred = credentials.Certificate(creds_path)
         firebase_admin.initialize_app(cred)
         _initialized = True
     else:
-        print(f"⚠️  Firebase credentials not found at {creds_path}. Push notifications disabled.")
+        print(f"Firebase credentials not found at {creds_path}. Push notifications disabled.")
 
 
 _init_firebase()
@@ -36,10 +38,10 @@ def send_push_notification(fcm_token: str, title: str, body: str, data: dict = N
             token=fcm_token,
         )
         response = messaging.send(message)
-        print(f"✅ Notification sent: {response}")
+        print(f"Notification sent: {response}")
         return True
-    except Exception as e:
-        print(f"❌ Notification error: {e}")
+    except Exception as exc:
+        print(f"Notification error: {exc}")
         return False
 
 
@@ -54,8 +56,8 @@ def send_multicast_notification(tokens: list, title: str, body: str, data: dict 
             tokens=tokens,
         )
         response = messaging.send_multicast(message)
-        print(f"✅ Multicast sent: {response.success_count} success, {response.failure_count} failures")
+        print(f"Multicast sent: {response.success_count} success, {response.failure_count} failures")
         return True
-    except Exception as e:
-        print(f"❌ Multicast error: {e}")
+    except Exception as exc:
+        print(f"Multicast error: {exc}")
         return False

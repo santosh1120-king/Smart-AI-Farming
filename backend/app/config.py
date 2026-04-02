@@ -1,16 +1,20 @@
-from pydantic_settings import BaseSettings
 from functools import lru_cache
+from pydantic import AliasChoices, Field
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    mongodb_url: str = "mongodb://localhost:27017"
-    database_name: str = "smart_farming"
+    supabase_url: str = Field(default="", validation_alias="SUPABASE_URL")
+    supabase_key: str = Field(
+        default="",
+        validation_alias=AliasChoices("SUPABASE_KEY", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_ANON_KEY"),
+    )
 
     secret_key: str = "change-this-secret"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 10080
 
-    gemini_api_key: str = ""
+    gemini_api_key: str = Field(default="", validation_alias=AliasChoices("GEMINI_API_KEY", "OPENAI_API_KEY"))
     openweather_api_key: str = ""
 
     cloudinary_cloud_name: str = ""
