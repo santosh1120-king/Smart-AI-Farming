@@ -4,8 +4,8 @@ A full-stack farming assistant built with React, FastAPI, Supabase, and Gemini.
 
 ## Features
 
-- Crop image analysis with Gemini vision
-- Voice farming assistant powered by Gemini
+- Crop image analysis with multi-provider AI (Groq, OpenRouter, Together)
+- Voice farming assistant with high-speed response waterfall
 - Weather monitoring with risk alerts
 - Government scheme discovery
 - JWT-based login and registration
@@ -17,7 +17,7 @@ A full-stack farming assistant built with React, FastAPI, Supabase, and Gemini.
 - Frontend: React + Vite
 - Backend: FastAPI
 - Database: Supabase
-- AI: Gemini via Google's OpenAI-compatible API endpoint
+- AI: Waterfall cascade (Groq, OpenRouter, Together AI)
 - Hosting: Vercel (frontend) and Render (backend)
 
 ## Local Setup
@@ -54,9 +54,11 @@ Frontend runs at `http://localhost:5173`.
 Required in `backend/.env`:
 
 - `SUPABASE_URL`
-- `SUPABASE_KEY`
+- `SUPABASE_KEY` (Service Role or Anon)
 - `SECRET_KEY`
-- `GEMINI_API_KEY`
+- `GROQ_API_KEY`
+- `OPENROUTER_API_KEY` (Fallback)
+- `TOGETHER_API_KEY` (Fallback)
 - `OPENWEATHER_API_KEY`
 - `CLOUDINARY_CLOUD_NAME`
 - `CLOUDINARY_API_KEY`
