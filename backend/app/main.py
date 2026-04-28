@@ -53,6 +53,15 @@ app.include_router(voice.router, prefix="/api/voice", tags=["Voice Assistant"])
 app.include_router(notifications.router, prefix="/api/notifications", tags=["Notifications"])
 
 
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logging.error(f"Global exception: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Internal Server Error: {str(exc)}", "type": type(exc).__name__},
+    )
+
+
 @app.get("/", tags=["Health"])
 async def root():
     return {"message": "AI Smart Farming Assistant API is running", "docs": "/docs"}

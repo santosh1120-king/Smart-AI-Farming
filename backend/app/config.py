@@ -28,10 +28,11 @@ class Settings(BaseSettings):
     firebase_credentials_path: str = "firebase-credentials.json"
     frontend_url: str = "http://localhost:5173"
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        extra = "allow"
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "extra": "allow",
+    }
 
 
 @lru_cache()
