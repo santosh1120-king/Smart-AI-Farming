@@ -1,7 +1,9 @@
 import axios from 'axios'
 
 function normalizeApiBaseUrl(value) {
-  if (!value) return ''
+  if (!value) {
+    return import.meta.env.PROD ? 'https://smart-ai-farming.onrender.com' : ''
+  }
 
   const trimmed = value.trim().replace(/\/+$/, '')
 
@@ -9,31 +11,50 @@ function normalizeApiBaseUrl(value) {
   return trimmed.replace(/\/api$/, '')
 }
 
-const api = axios.create({
-  baseURL: normalizeApiBaseUrl(import.meta.env.VITE_API_URL),
-  timeout: 30000,
-})
+function getApiBaseUrl() {
+  return normalizeApiBaseUrl(import.meta.env.VITE_API_URL)
+}
 
-// Attach JWT token to every request
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token')
+function getStoredToken() {
+  return localStorage.getItem('token')
+}
+
+function clearStoredAuth() {
+  localStorage.removeItem('token')
+  localStorage.removeItem('user')
+}
+
+function redirectToLogin() {
+  window.location.href = '/login'
+}
+
+function createApiClient() {
+  return axios.create({
+    baseURL: getApiBaseUrl(),
+    timeout: 30000,
+  })
+}
+
+const api = createApiClient()
+
+function attachToken(config) {
+  const token = getStoredToken()
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
   return config
-})
+}
 
-// Handle 401 - clear bad tokens
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      window.location.href = '/login'
-    }
-    return Promise.reject(error)
+function handleApiError(error) {
+  if (error.response?.status === 401) {
+    clearStoredAuth()
+    redirectToLogin()
   }
-)
+
+  return Promise.reject(error)
+}
+
+api.interceptors.request.use(attachToken)
+api.interceptors.response.use((response) => response, handleApiError)
 
 export default api

@@ -8,10 +8,12 @@ OPENWEATHER_BASE = "https://api.openweathermap.org/data/2.5/weather"
 
 
 def _detect_risk(data: dict) -> WeatherRisk:
-    """Detect weather risks from OpenWeather response."""
+    """Detect weather risks from OpenWeather response using pure logic rules."""
     weather_id = data["weather"][0]["id"]
     temp = data["main"]["temp"]
+    humidity = data["main"]["humidity"]
     wind = data["wind"]["speed"]
+    is_rainy = 200 <= weather_id <= 531
 
     # Thunderstorm / tornado
     if weather_id < 300:
@@ -44,6 +46,22 @@ def _detect_risk(data: dict) -> WeatherRisk:
             type="frost",
             message="Frost / snowfall warning!",
             advice="Cover sensitive crops. Bring young seedlings indoors if possible.",
+        )
+    # High humidity + rain = fungal disease risk
+    if humidity > 85 and is_rainy:
+        return WeatherRisk(
+            level="medium",
+            type="disease_risk",
+            message="High humidity and rain may increase fungal disease risk.",
+            advice="Inspect leaves for spots or mold. Avoid overhead watering and improve airflow.",
+        )
+    # High humidity alone (potential disease pressure)
+    if humidity > 90:
+        return WeatherRisk(
+            level="medium",
+            type="disease_risk",
+            message=f"Very high humidity ({humidity}%) can promote fungal growth.",
+            advice="Monitor crops closely for mildew or blight. Ensure good ventilation in greenhouses.",
         )
     # Heatwave (above 38°C)
     if temp > 38:

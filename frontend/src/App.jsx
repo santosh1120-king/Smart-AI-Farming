@@ -1,17 +1,15 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
-import { useAuth } from './context/AuthContext'
+import { Navigate, Route, Routes } from 'react-router-dom'
+import { useAuth } from './context/useAuth'
 import ProtectedRoute from './components/ProtectedRoute'
-
-// Pages
-import LoginPage from './pages/LoginPage'
-import RegisterPage from './pages/RegisterPage'
-import DashboardPage from './pages/DashboardPage'
+import Layout from './components/Layout'
 import CropAnalysisPage from './pages/CropAnalysisPage'
 import CropHistoryPage from './pages/CropHistoryPage'
-import WeatherPage from './pages/WeatherPage'
+import DashboardPage from './pages/DashboardPage'
+import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
 import SchemesPage from './pages/SchemesPage'
 import VoiceAssistantPage from './pages/VoiceAssistantPage'
-import Layout from './components/Layout'
+import WeatherPage from './pages/WeatherPage'
 
 export default function App() {
   const { user, loading } = useAuth()
@@ -19,20 +17,18 @@ export default function App() {
   if (loading) {
     return (
       <div className="loading-screen">
-        <div className="loading-logo">🌱</div>
-        <div className="loading-spinner"></div>
-        <p>Loading Smart Farming...</p>
+        <div className="loading-logo">AF</div>
+        <div className="loading-spinner" aria-hidden="true"></div>
+        <p>Loading Smart Farming…</p>
       </div>
     )
   }
 
   return (
     <Routes>
-      {/* Public Routes */}
       <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
       <Route path="/register" element={user ? <Navigate to="/dashboard" replace /> : <RegisterPage />} />
 
-      {/* Protected Routes */}
       <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/crop-analysis" element={<CropAnalysisPage />} />
@@ -42,7 +38,6 @@ export default function App() {
         <Route path="/voice" element={<VoiceAssistantPage />} />
       </Route>
 
-      {/* Default redirect */}
       <Route path="/" element={<Navigate to={user ? '/dashboard' : '/login'} replace />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

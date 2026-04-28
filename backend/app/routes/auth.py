@@ -6,7 +6,7 @@ import httpx
 from ..database import insert_row, select_one, update_rows, utcnow_iso
 from ..models.user import GoogleAuthRequest, UserCreate, UserLogin, UserResponse, TokenResponse
 from ..config import get_settings
-from ..utils.auth import hash_password, verify_password, create_access_token, get_current_user
+from ..utils.auth import create_access_token, get_current_user
 
 router = APIRouter()
 settings = get_settings()
@@ -42,42 +42,26 @@ async def _fetch_supabase_user(access_token: str) -> dict:
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-async def register(data: UserCreate):
-    existing = await select_one("users", filters=[("email", "eq", data.email)])
-    if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
-
-    user_doc = {
-        "id": uuid.uuid4().hex,
-        "name": data.name,
-        "email": data.email,
-        "hashed_password": hash_password(data.password),
-        "state": data.state,
-        "phone": data.phone,
-        "fcm_token": None,
-        "created_at": utcnow_iso(),
-    }
-    created_user = await insert_row("users", user_doc)
-
-    token = create_access_token({"sub": created_user["id"]})
-    return TokenResponse(access_token=token, user=_user_to_response(created_user))
+async def register(_: UserCreate):
+    raise HTTPException(
+        status_code=410,
+        detail="Email registration is disabled. Please continue with Google.",
+    )
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(data: UserLogin):
-    user = await select_one("users", filters=[("email", "eq", data.email)])
-    if not user or not verify_password(data.password, user.get("hashed_password", "")):
-        raise HTTPException(status_code=401, detail="Incorrect email or password")
-
-    token = create_access_token({"sub": str(user["id"])})
-    return TokenResponse(access_token=token, user=_user_to_response(user))
+async def login(_: UserLogin):
+    raise HTTPException(
+        status_code=410,
+        detail="Email login is disabled. Please continue with Google.",
+    )
 
 
 @router.post("/google", response_model=TokenResponse)
 async def google_auth(data: GoogleAuthRequest):
     supabase_user = await _fetch_supabase_user(data.access_token)
 
-    email = supabase_user.get("email")
+    email = (supabase_user.get("email") or "").strip().lower()
     if not email:
         raise HTTPException(status_code=400, detail="Google account did not return an email")
 

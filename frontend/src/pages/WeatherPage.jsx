@@ -1,13 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { AlertTriangle, CloudRainWind, LocateFixed, RefreshCw } from 'lucide-react'
 import api from '../services/api'
-
-const WEATHER_ICONS = {
-  '01d': '☀️', '01n': '🌙', '02d': '⛅', '02n': '⛅',
-  '03d': '☁️', '03n': '☁️', '04d': '☁️', '04n': '☁️',
-  '09d': '🌧️', '09n': '🌧️', '10d': '🌦️', '10n': '🌧️',
-  '11d': '⛈️', '11n': '⛈️', '13d': '❄️', '13n': '❄️',
-  '50d': '🌫️', '50n': '🌫️',
-}
 
 export default function WeatherPage() {
   const [weather, setWeather] = useState(null)
@@ -17,18 +10,20 @@ export default function WeatherPage() {
 
   const fetchWeather = () => {
     if (!navigator.geolocation) {
-      setError('Geolocation not supported in your browser')
+      setError('Geolocation is not supported in this browser.')
       return
     }
+
     setLoading(true)
     setError(null)
+
     navigator.geolocation.getCurrentPosition(
       async ({ coords }) => {
         try {
           const { data } = await api.get(`/api/weather?lat=${coords.latitude}&lon=${coords.longitude}`)
           setWeather(data)
-        } catch (err) {
-          setError(err.response?.data?.detail || 'Failed to fetch weather. Check your API key.')
+        } catch (requestError) {
+          setError(requestError.response?.data?.detail || 'Failed to fetch weather. Check your API key.')
         } finally {
           setLoading(false)
         }
@@ -36,36 +31,51 @@ export default function WeatherPage() {
       () => {
         setLocationDenied(true)
         setLoading(false)
-        setError('Location access denied. Please enable location in browser settings.')
+        setError('Location access was denied. Enable it in your browser settings and try again.')
       },
-      { timeout: 10000 }
+      { timeout: 10000 },
     )
   }
 
-  useEffect(() => { fetchWeather() }, [])
+  useEffect(() => {
+    fetchWeather()
+  }, [])
 
-  const riskColors = { none: null, low: 'low', medium: 'medium', high: 'high' }
+  const farmingAdvice = weather
+    ? [
+        weather.humidity > 80 ? 'High humidity can increase fungal pressure. Avoid overhead watering and inspect dense foliage.' : null,
+        weather.humidity < 30 ? 'Low humidity means moisture escapes quickly. Irrigate earlier in the day and consider mulching.' : null,
+        weather.temperature > 30 ? `High temperature: ${weather.temperature}°C. Increase irrigation frequency. Monitor crops for heat stress.` : null,
+        weather.temperature < 10 ? 'Cold-sensitive crops may need cover, mulch, or wind protection tonight.' : null,
+        weather.wind_speed > 10 ? 'Strong wind is not ideal for spraying. Delay pesticide or foliar applications if possible.' : null,
+        weather.risk.level === 'none' ? 'Conditions look steady for normal field work. This is a good window for inspections and planning.' : null,
+      ].filter(Boolean)
+    : []
 
   return (
     <div className="animate-in">
       <div className="page-header">
-        <h1>🌤️ Weather Monitor</h1>
-        <p>Real-time weather conditions and risk alerts for your farm</p>
+        <h1>Weather Monitor</h1>
+        <p>Use your live location to track current field conditions and turn weather into decisions you can actually use today.</p>
       </div>
 
       {loading && (
-        <div className="card" style={{ textAlign: 'center', padding: 48 }}>
-          <div className="loading-spinner" style={{ margin: '0 auto 16px' }} />
-          <p style={{ color: 'var(--color-text-muted)' }}>Detecting your location and fetching weather...</p>
+        <div className="card" style={{ textAlign: 'center', padding: '3rem 1.5rem' }}>
+          <div className="loading-spinner" style={{ margin: '0 auto 0.9rem' }} aria-hidden="true" />
+          <p className="text-muted">Detecting location and fetching weather conditions…</p>
         </div>
       )}
 
-      {error && (
+      {error && !loading && (
         <div className="card">
-          <div style={{ textAlign: 'center', padding: 32 }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>📍</div>
-            <h3 style={{ marginBottom: 8 }}>{locationDenied ? 'Location Access Needed' : 'Weather Unavailable'}</h3>
-            <p style={{ color: 'var(--color-text-muted)', marginBottom: 20, lineHeight: 1.6 }}>{error}</p>
+          <div style={{ textAlign: 'center', padding: '2rem 1rem' }}>
+            <div className="empty-icon" style={{ marginBottom: '0.8rem' }}>
+              <LocateFixed size={22} aria-hidden="true" />
+            </div>
+            <h3 style={{ margin: 0, fontFamily: 'Cormorant Garamond, serif', fontSize: '2rem', color: 'var(--ink-strong)' }}>
+              {locationDenied ? 'Location Access Required' : 'Weather Unavailable'}
+            </h3>
+            <p style={{ color: 'var(--ink-soft)', marginBottom: '1rem' }}>{error}</p>
             <button className="btn btn-primary" onClick={fetchWeather}>Try Again</button>
           </div>
         </div>
@@ -73,73 +83,56 @@ export default function WeatherPage() {
 
       {weather && !loading && (
         <div className="animate-in">
-          {/* Main Weather Card */}
-          <div className="weather-card" style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 14, color: '#93c5fd', fontWeight: 600, marginBottom: 16 }}>
-              📍 {weather.city}, {weather.country}
+          <div className="weather-card" style={{ marginBottom: '1.2rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.8rem', marginBottom: '1rem' }}>
+              <div>
+                <div className="form-label" style={{ marginBottom: '0.2rem' }}>Current Location</div>
+                <div style={{ color: 'var(--ink-soft)' }}>{weather.city}, {weather.country}</div>
+              </div>
+              <CloudRainWind size={22} color="var(--ink-strong)" aria-hidden="true" />
             </div>
+
             <div className="weather-main">
               <div>
                 <div className="weather-temp">{weather.temperature}°C</div>
-                <div className="weather-condition" style={{ fontSize: 20 }}>{weather.condition}</div>
-                <div className="weather-city" style={{ marginTop: 4 }}>Feels like {weather.feels_like}°C</div>
+                <div className="weather-condition">{weather.condition}</div>
+                <div className="weather-city">Feels like {weather.feels_like}°C</div>
               </div>
-              <div className="weather-icon" style={{ fontSize: 80 }}>
-                {WEATHER_ICONS[weather.condition_icon] || '🌤️'}
+              <div className="weather-icon">
+                <CloudRainWind size={82} strokeWidth={1.4} aria-hidden="true" />
               </div>
             </div>
 
             <div className="weather-stats">
               <div className="weather-stat">
-                <div className="weather-stat-value" style={{ fontSize: 22 }}>💧</div>
                 <div className="weather-stat-value">{weather.humidity}%</div>
                 <div className="weather-stat-label">Humidity</div>
               </div>
               <div className="weather-stat">
-                <div className="weather-stat-value" style={{ fontSize: 22 }}>💨</div>
                 <div className="weather-stat-value">{weather.wind_speed} m/s</div>
                 <div className="weather-stat-label">Wind</div>
               </div>
               <div className="weather-stat">
-                <div className="weather-stat-value" style={{ fontSize: 22 }}>👁️</div>
                 <div className="weather-stat-value">{weather.visibility} km</div>
                 <div className="weather-stat-label">Visibility</div>
               </div>
             </div>
 
-            {weather.risk.level !== 'none' && (
-              <div className={`risk-alert ${weather.risk.level}`} style={{ marginTop: 20 }}>
-                <span className="risk-alert-icon">
-                  {weather.risk.level === 'high' ? '🚨' : weather.risk.level === 'medium' ? '⚠️' : 'ℹ️'}
-                </span>
-                <div>
-                  <div style={{ fontWeight: 700, marginBottom: 4 }}>{weather.risk.message}</div>
-                  <div style={{ opacity: 0.9 }}>{weather.risk.advice}</div>
-                </div>
-              </div>
-            )}
           </div>
 
-          {/* Farming Advice Based on Weather */}
           <div className="card">
-            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 16 }}>🌾 Farming Advice for Today</div>
-            {[
-              weather.humidity > 80 ? '💧 High humidity may promote fungal diseases. Avoid overhead irrigation.' : null,
-              weather.humidity < 30 ? '🌵 Low humidity — water crops frequently and mulch soil to retain moisture.' : null,
-              weather.temperature > 35 ? '🔥 Heat stress warning! Water crops in early morning or evening only.' : null,
-              weather.temperature < 10 ? '❄️ Cold conditions — protect sensitive seedlings with covers or mulch.' : null,
-              weather.wind_speed > 10 ? '💨 High winds — avoid spraying pesticides. Check crop supports.' : null,
-              weather.risk.level === 'none' ? '✅ Great farming weather! Ideal conditions for field work.' : null,
-            ].filter(Boolean).map((advice, i) => (
-              <div key={i} className="recommendation-item">
+            <div className="form-label" style={{ marginBottom: '0.45rem' }}>Today&apos;s Field Advice</div>
+            {farmingAdvice.map((advice, index) => (
+              <div key={index} className="recommendation-item">
                 <span>{advice}</span>
               </div>
             ))}
           </div>
 
-          <div style={{ textAlign: 'center', marginTop: 16 }}>
+          <div style={{ textAlign: 'center', marginTop: '1rem' }}>
             <button className="btn btn-outline btn-sm" onClick={fetchWeather}>
-              🔄 Refresh Weather
+              <RefreshCw size={14} aria-hidden="true" />
+              Refresh Weather
             </button>
           </div>
         </div>

@@ -1,8 +1,9 @@
 import uuid
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from ..database import insert_row, utcnow_iso
+from ..database import insert_row, select_rows, utcnow_iso
 from ..services.notification_service import send_push_notification
 from ..services.weather_service import fetch_weather
 from ..utils.auth import get_current_user
@@ -37,14 +38,25 @@ async def get_weather(
     )
 
     risk = weather.risk
-    if risk.level in ["high", "medium"] and current_user.get("fcm_token"):
+    if risk.level in ["high", "medium"]:
         title = f"Weather Alert: {risk.type.title() if risk.type else 'Risk'}"
-        send_push_notification(
-            current_user["fcm_token"],
-            title,
-            risk.message or "Check weather conditions",
-            {"type": "weather_risk"},
+        notif_type = f"weather_{risk.type or 'risk'}"
+
+        # Duplicate prevention: skip if same alert type was sent in last 3 hours
+        cooldown = (datetime.now(timezone.utc) - timedelta(hours=3)).isoformat()
+        recent = await select_rows(
+            "notifications",
+            filters=[
+                ("user_id", "eq", current_user["id"]),
+                ("type", "eq", notif_type),
+                ("sent_at", "gte", cooldown),
+            ],
+            limit=1,
         )
+        if recent:
+            return weather_dict
+
+        # Always save notification to DB (works without Firebase)
         await insert_row(
             "notifications",
             {
@@ -52,10 +64,19 @@ async def get_weather(
                 "user_id": current_user["id"],
                 "title": title,
                 "body": risk.message,
-                "type": "weather_risk",
+                "type": notif_type,
                 "read": False,
                 "sent_at": utcnow_iso(),
             },
         )
+
+        # Send push notification only if FCM token exists (requires Firebase)
+        if current_user.get("fcm_token"):
+            send_push_notification(
+                current_user["fcm_token"],
+                title,
+                risk.message or "Check weather conditions",
+                {"type": notif_type},
+            )
 
     return weather_dict

@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -6,6 +7,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from .config import get_settings
 from .database import close_db, connect_db
 from .routes import auth, crop, notifications, schemes, voice, weather
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
 
 settings = get_settings()
 
@@ -54,3 +61,11 @@ async def root():
 @app.get("/health", tags=["Health"])
 async def health_check():
     return {"status": "healthy"}
+
+
+# Vercel serverless handler
+from fastapi import Request
+from fastapi.responses import JSONResponse
+
+# For Vercel serverless deployment
+handler = app

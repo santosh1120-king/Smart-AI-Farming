@@ -38,7 +38,6 @@ async def analyze_crop(
         ai_result = await ai_service.analyze_crop_image(
             image_data=image_data,
             filename=file.filename,
-            provider_keys=ai_service.build_provider_keys(request.headers),
             notes=notes,
         )
         analysis_dict = ai_result["analysis"]

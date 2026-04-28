@@ -1,9 +1,14 @@
 import base64
 import json
+import logging
 from dataclasses import dataclass
 from typing import Any
 
 import httpx
+
+from ..config import get_settings
+
+logger = logging.getLogger(__name__)
 
 
 SYSTEM_PROMPT = """You are an expert agricultural AI assistant. Analyze crop images and provide detailed assessments.
@@ -33,15 +38,19 @@ MODEL_CASCADE = {
     "text_fast": [
         ("groq", "llama-3.1-8b-instant"),
         ("openrouter", "meta-llama/llama-3.3-70b-instruct:free"),
+        ("together", "meta-llama/Llama-3.3-70B-Instruct-Turbo"),
     ],
     "text_complex": [
         ("groq", "llama-3.3-70b-versatile"),
         ("groq", "llama-3.1-8b-instant"),
         ("openrouter", "meta-llama/llama-3.3-70b-instruct:free"),
+        ("together", "meta-llama/Llama-3.3-70B-Instruct-Turbo"),
     ],
     "vision": [
+        ("groq", "llama-3.2-11b-vision-instant"),
         ("openrouter", "google/gemini-2.0-flash-lite-001"),
         ("openrouter", "meta-llama/llama-3.3-70b-instruct:free"),
+        ("together", "meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo"),
     ],
 }
 
@@ -57,10 +66,12 @@ class AIServiceError(RuntimeError):
     pass
 
 
-def build_provider_keys(headers: dict[str, str]) -> dict[str, str]:
+def _load_server_keys() -> dict[str, str]:
+    settings = get_settings()
     return {
-        "groq": headers.get("x-ai-groq-key", "").strip(),
-        "openrouter": headers.get("x-ai-openrouter-key", "").strip(),
+        "groq": settings.groq_api_key.strip(),
+        "openrouter": settings.openrouter_api_key.strip(),
+        "together": settings.together_api_key.strip(),
     }
 
 
@@ -102,6 +113,8 @@ def _provider_endpoint(provider: str) -> tuple[str, dict[str, str]]:
             "HTTP-Referer": "http://localhost:5173",
             "X-Title": "Smart AI Farming",
         }
+    if provider == "together":
+        return "https://api.together.xyz/v1/chat/completions", {}
     raise AIServiceError(f"Unsupported provider '{provider}'")
 
 
@@ -147,24 +160,34 @@ async def _call_provider(
 
 async def _run_waterfall(
     task_type: str,
-    provider_keys: dict[str, str],
     messages: list[dict[str, Any]],
     max_tokens: int,
     temperature: float,
 ) -> AIResult:
+    provider_keys = _load_server_keys()
+    logger.info(f"Starting AI waterfall for task_type={task_type}")
     errors: list[str] = []
     for provider, model in MODEL_CASCADE[task_type]:
         api_key = provider_keys.get(provider, "")
         if not api_key:
-            errors.append(f"{provider.title()} key missing")
+            logger.warning(f"{provider} API key not configured")
+            errors.append(f"{provider.title()} key not configured")
             continue
         try:
-            return await _call_provider(provider, api_key, model, messages, max_tokens, temperature)
+            logger.info(f"Trying provider={provider} model={model}")
+            result = await _call_provider(provider, api_key, model, messages, max_tokens, temperature)
+            logger.info(f"Success with provider={provider} model={model}")
+            return result
         except AIServiceError as exc:
+            logger.warning(f"Provider {provider} failed: {exc}")
             errors.append(str(exc))
             continue
 
-    raise AIServiceError("All AI providers failed. " + " | ".join(errors))
+    error_details = "; ".join(errors)
+    logger.error(f"All AI providers failed: {error_details}")
+    raise AIServiceError(
+        f"AI service unavailable. Provider errors: {error_details}"
+    )
 
 
 def _build_image_content(image_data: bytes, filename: str) -> dict[str, Any]:
@@ -183,14 +206,8 @@ def _build_image_content(image_data: bytes, filename: str) -> dict[str, Any]:
 async def analyze_crop_image(
     image_data: bytes,
     filename: str,
-    provider_keys: dict[str, str],
     notes: str | None = None,
 ) -> dict[str, Any]:
-    if not provider_keys.get("openrouter"):
-        raise AIServiceError(
-            "OpenRouter API key is required for image analysis in the free-tier waterfall."
-        )
-
     user_prompt = "Analyze this crop image and provide a detailed assessment."
     if notes:
         user_prompt += f" Additional farmer notes: {notes}"
@@ -208,7 +225,6 @@ async def analyze_crop_image(
 
     result = await _run_waterfall(
         task_type="vision",
-        provider_keys=provider_keys,
         messages=messages,
         max_tokens=800,
         temperature=0.2,
@@ -224,7 +240,6 @@ async def analyze_crop_image(
 
 async def answer_farming_question(
     query: str,
-    provider_keys: dict[str, str],
     context: str | None = None,
 ) -> dict[str, str]:
     messages = [{"role": "system", "content": TEXT_SYSTEM_PROMPT}]
@@ -235,7 +250,6 @@ async def answer_farming_question(
     task_type = "text_fast" if len(query) < 120 and not context else "text_complex"
     result = await _run_waterfall(
         task_type=task_type,
-        provider_keys=provider_keys,
         messages=messages,
         max_tokens=400,
         temperature=0.5,

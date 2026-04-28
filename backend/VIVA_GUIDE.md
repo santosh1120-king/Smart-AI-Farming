@@ -581,4 +581,3 @@ Example:
 
 Crop analysis takes an image from the frontend, the backend uploads it to Cloudinary, then AI providers analyze it and the result is stored in Supabase. This design separates image storage, AI processing, and database storage clearly.
 
-by santosh

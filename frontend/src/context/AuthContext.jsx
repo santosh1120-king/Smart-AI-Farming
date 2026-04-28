@@ -1,25 +1,26 @@
-import { createContext, useContext, useState, useEffect } from 'react'
-import api from '../services/api'
+import { useState } from 'react'
+import { AuthContext } from './authContextValue'
 
-const AuthContext = createContext(null)
+function readStoredUser() {
+  const token = localStorage.getItem('token')
+  const storedUser = localStorage.getItem('user')
+
+  if (!token || !storedUser) {
+    return null
+  }
+
+  try {
+    return JSON.parse(storedUser)
+  } catch {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    return null
+  }
+}
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const token = localStorage.getItem('token')
-    const storedUser = localStorage.getItem('user')
-    if (token && storedUser) {
-      try {
-        setUser(JSON.parse(storedUser))
-      } catch {
-        localStorage.removeItem('token')
-        localStorage.removeItem('user')
-      }
-    }
-    setLoading(false)
-  }, [])
+  const [user, setUser] = useState(() => readStoredUser())
+  const loading = false
 
   const login = (userData, token) => {
     localStorage.setItem('token', token)
@@ -38,10 +39,4 @@ export function AuthProvider({ children }) {
       {children}
     </AuthContext.Provider>
   )
-}
-
-export function useAuth() {
-  const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider')
-  return ctx
 }

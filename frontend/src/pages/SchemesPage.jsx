@@ -1,11 +1,27 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useAuth } from '../context/AuthContext'
+import { useEffect, useState } from 'react'
+import { useAuth } from '../context/useAuth'
+import { ScrollText } from 'lucide-react'
 import { SCHEMES, SCHEME_CROPS, SCHEME_STATES } from '../data/schemesData'
+import ThemedSelect from '../components/ThemedSelect'
 
 function matchesFilter(value, search) {
-  if (!search) return true
-  if (!value) return false
+  if (!search) {
+    return true
+  }
+
+  if (!value) {
+    return false
+  }
+
   return value.toLowerCase().includes(search.toLowerCase())
+}
+
+function filterSchemes(allSchemes, state, crop) {
+  return allSchemes.filter((scheme) => {
+    const stateMatches = scheme.state === 'All' || matchesFilter(scheme.state, state)
+    const cropMatches = scheme.crop_type === 'All' || matchesFilter(scheme.crop_type, crop)
+    return stateMatches && cropMatches
+  })
 }
 
 export default function SchemesPage() {
@@ -15,51 +31,71 @@ export default function SchemesPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 250)
+    const timer = setTimeout(() => {
+      setLoading(false)
+    }, 250)
+
     return () => clearTimeout(timer)
   }, [])
 
-  const schemes = useMemo(() => {
-    return SCHEMES.filter((scheme) => {
-      const stateMatch = scheme.state === 'All' || matchesFilter(scheme.state, state)
-      const cropMatch = scheme.crop_type === 'All' || matchesFilter(scheme.crop_type, crop)
-      return stateMatch && cropMatch
-    })
-  }, [state, crop])
+  const schemes = filterSchemes(SCHEMES, state, crop)
 
   return (
     <div className="animate-in">
       <div className="page-header">
         <h1>Government Schemes</h1>
-        <p>Browse farmer support schemes, subsidies, and state-specific agriculture programs.</p>
+        <p>Browse farmer support schemes, subsidies, and agriculture programs without depending on the backend database.</p>
       </div>
 
       <div className="settings-callout page-callout">
-        These schemes are now hardcoded in the frontend, so the page works even if the backend or database has no scheme rows.
+        These schemes are saved directly in the frontend, so this page still works even when the database has no scheme rows.
       </div>
 
       <div className="filter-bar">
-        <select className="form-input" value={state} onChange={(e) => setState(e.target.value)}>
-          {SCHEME_STATES.map((entry) => <option key={entry} value={entry === 'All' ? '' : entry}>{entry}</option>)}
-        </select>
-        <select className="form-input" value={crop} onChange={(e) => setCrop(e.target.value)}>
-          {SCHEME_CROPS.map((entry) => <option key={entry} value={entry === 'All' ? '' : entry}>{entry}</option>)}
-        </select>
-        <button type="button" className="btn btn-outline" onClick={() => { setState(''); setCrop('') }}>
-          Reset Filters
-        </button>
+        <div style={{ flex: 1, minWidth: '14rem' }}>
+          <ThemedSelect
+            id="scheme-state"
+            label="State Search"
+            value={state}
+            options={SCHEME_STATES.map(s => ({ label: s, value: s === 'All' ? '' : s }))}
+            onChange={(e) => setState(e.target.value)}
+          />
+        </div>
+
+        <div style={{ flex: 1, minWidth: '14rem' }}>
+          <ThemedSelect
+            id="scheme-crop"
+            label="Crop Search"
+            value={crop}
+            options={SCHEME_CROPS.map(c => ({ label: c, value: c === 'All' ? '' : c }))}
+            onChange={(e) => setCrop(e.target.value)}
+          />
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+          <button
+            type="button"
+            className="btn btn-outline"
+            onClick={() => {
+              setState('')
+              setCrop('')
+            }}
+          >
+            Reset Filters
+          </button>
+        </div>
       </div>
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: 48 }}>
-          <div className="loading-spinner" style={{ margin: '0 auto 16px' }} />
-          <p style={{ color: 'var(--color-text-muted)' }}>Loading schemes...</p>
+          <div className="loading-spinner" style={{ margin: '0 auto 16px' }} aria-hidden="true" />
+          <p className="text-muted">Loading schemes…</p>
         </div>
       ) : schemes.length === 0 ? (
         <div className="empty-state">
-          <div className="empty-icon">No Match</div>
+          <div className="empty-icon"><ScrollText size={22} aria-hidden="true" /></div>
           <h3>No schemes found</h3>
-          <p>Try changing the state or crop filters.</p>
+          <p>Try another state or crop filter.</p>
         </div>
       ) : (
         <div className="schemes-grid">
@@ -70,12 +106,13 @@ export default function SchemesPage() {
                   <div className="scheme-card-title">{scheme.name}</div>
                   <div className="scheme-card-ministry">{scheme.ministry}</div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}>
-                  <span className="badge badge-none" style={{ fontSize: 11 }}>{scheme.state}</span>
-                  {scheme.crop_type && scheme.crop_type !== 'All' && (
-                    <span className="badge badge-healthy" style={{ fontSize: 11 }}>{scheme.crop_type}</span>
-                  )}
-                </div>
+              </div>
+
+              <div className="analysis-meta" style={{ marginBottom: '1.25rem' }}>
+                <span className="badge badge-none">{scheme.state}</span>
+                {scheme.crop_type && scheme.crop_type !== 'All' && (
+                  <span className="badge badge-healthy">{scheme.crop_type}</span>
+                )}
               </div>
 
               <div className="scheme-detail">
@@ -83,8 +120,8 @@ export default function SchemesPage() {
                 <div className="scheme-detail-value">{scheme.description}</div>
               </div>
 
-              <div className="scheme-detail" style={{ background: 'rgba(34,197,94,0.07)', padding: '10px', borderRadius: 8 }}>
-                <div className="scheme-detail-label" style={{ color: 'var(--green-400)' }}>Benefits</div>
+              <div className="scheme-detail" style={{ background: 'rgba(178, 122, 53, 0.08)', padding: '10px', borderRadius: 10 }}>
+                <div className="scheme-detail-label" style={{ color: 'var(--gold)' }}>Benefits</div>
                 <div className="scheme-detail-value" style={{ fontWeight: 600 }}>{scheme.benefits}</div>
               </div>
 
@@ -101,12 +138,7 @@ export default function SchemesPage() {
               )}
 
               <div style={{ marginTop: 16 }}>
-                <a
-                  href={scheme.apply_link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="scheme-apply-btn"
-                >
+                <a href={scheme.apply_link} target="_blank" rel="noopener noreferrer" className="scheme-apply-btn">
                   Apply Now
                 </a>
               </div>

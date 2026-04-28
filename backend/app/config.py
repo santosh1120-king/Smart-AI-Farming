@@ -14,12 +14,16 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 10080
 
-    gemini_api_key: str = Field(default="", validation_alias=AliasChoices("GEMINI_API_KEY", "OPENAI_API_KEY"))
-    openweather_api_key: str = ""
+    openweather_api_key: str = Field(default="", validation_alias="OPENWEATHER_API_KEY")
 
-    cloudinary_cloud_name: str = ""
-    cloudinary_api_key: str = ""
-    cloudinary_api_secret: str = ""
+    cloudinary_cloud_name: str = Field(default="", validation_alias="CLOUDINARY_CLOUD_NAME")
+    cloudinary_api_key: str = Field(default="", validation_alias="CLOUDINARY_API_KEY")
+    cloudinary_api_secret: str = Field(default="", validation_alias="CLOUDINARY_API_SECRET")
+
+    # AI Providers
+    groq_api_key: str = Field(default="", validation_alias="GROQ_API_KEY")
+    openrouter_api_key: str = Field(default="", validation_alias="OPENROUTER_API_KEY")
+    together_api_key: str = Field(default="", validation_alias="TOGETHER_API_KEY")
 
     firebase_credentials_path: str = "firebase-credentials.json"
     frontend_url: str = "http://localhost:5173"

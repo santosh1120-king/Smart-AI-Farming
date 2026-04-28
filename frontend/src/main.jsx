@@ -15,10 +15,14 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           position="top-center"
           toastOptions={{
             duration: 4000,
+            ariaProps: {
+              role: 'status',
+              'aria-live': 'polite',
+            },
             style: {
-              background: '#1e293b',
-              color: '#f1f5f9',
-              borderRadius: '12px',
+              background: '#203126',
+              color: '#f4eedf',
+              borderRadius: '16px',
               padding: '14px 18px',
               fontSize: '14px',
             },

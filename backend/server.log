@@ -1,0 +1,3 @@
+Firebase credentials not found at firebase-credentials.json. Push notifications disabled.
+Connected to Supabase
+INFO:     127.0.0.1:57104 - "GET /health HTTP/1.1" 200 OK
